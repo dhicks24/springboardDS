@@ -1,0 +1,52 @@
+# 0. Load the data in RStudio
+df <- read.csv("refine_original.csv")
+
+library(dplyr)
+library(tidyr)
+
+# 1. Clean up brand names (to philips, akzo, van houten, and unilever)
+
+companies_p <- gsub(pattern = ".*lps", replacement = "philips", companies, ignore.case = TRUE)
+companies_p <- gsub(pattern = ".*lips", replacement = "philips", companies_p, ignore.case = TRUE)
+companies_pa <- gsub(pattern = ".*zo$", replacement = "akzo", companies_p, ignore.case = TRUE) 
+companies_pa <- gsub(pattern = ".*z0$", replacement = "akzo", companies_pa, ignore.case = TRUE)
+companies_pav <- gsub(pattern = ".*outen$", replacement = "van houten", companies_pa, ignore.case = TRUE)
+companies_pavu <- gsub(pattern = ".*ver$", replacement = "unilever", companies_pav, ignore.case = TRUE)
+df[ , 1] <- companies_pavu
+
+
+# 2. Separate product code and number (into product_code and product_number)
+
+df <- df %>% tidyr::separate(Product.code...number, c("product_code", "product_number"))
+product_code <- df$product_code
+df$product_category <- product_code
+df <- df[,c("company","product_code","product_category","product_number", "address", "city", "country", "name")]
+
+
+# 3. Add product categories (into smartphone, tv, laptop, and tablet)
+
+product_category <- df$product_category
+product_category_p <- gsub(pattern = "p", replacement = "smartphone", product_category)
+product_category_pq <- gsub(pattern = "q", replacement = "tablet", product_category_p)
+product_category_pqx <- gsub(pattern = "x", replacement = "laptop", product_category_pq)
+product_category_pqxv <- gsub(pattern = "v", replacement = "television", product_category_pqx)
+df$product_category <- product_category_pqxv
+
+
+# 4. Add full address for geocoding (into full_address column containing address, city, and country)
+
+df$full_address <- paste(df$address, df$city, df$country, sep = ", ")
+
+
+# 5. Create dummy variables for company and product category (into company_philips,... and product_smartphone,...)
+
+df$company_philips <- ifelse(df$company == "philips", 1, 0)
+df$company_akzo <- ifelse(df$company == "akzo", 1, 0)
+df$company_van_houten <- ifelse(df$company == "van houten", 1, 0)
+df$company_unilever <- ifelse(df$company == "unilever", 1, 0)
+df$product_smartphone <- ifelse(df$product_category == "smartphone", 1, 0)
+df$product_tv <- ifelse(df$product_category == "tv", 1, 0)
+df$product_laptop <- ifelse(df$product_category == "laptop", 1, 0)
+df$product_tablet <- ifelse(df$product_category == "tablet", 1, 0)
+
+# 6. Submit the project on Github
